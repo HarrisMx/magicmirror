@@ -3,6 +3,8 @@ import numpy as np
 import pickle
 from PIL import Image
 import cv2
+import threading
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Load prebuilt model for Frontal Face
@@ -29,13 +31,13 @@ for root, dirs, files in os.walk(image_dir):
                 current_id += 1
             id_ = label_ids[label]
             #print(label_ids)
-
+            
             y_labels.append(label) #some number
             x_train.append(path) #verify this image, turn into numpy array, Gray
             pil_image = Image.open(path).convert("L")
             image_array = np.array(pil_image, "uint8")
             #print(image_array)
-            faces = faceCascade.detectMultiScale(np.array(image_array), scaleFactor = 1.5, minNeighbors = 5)
+            faces = faceCascade.detectMultiScale(image_array, scaleFactor = 1.5, minNeighbors = 5)
             for (x,y,w,h) in faces:
                 roi = image_array[ y : y + h , x : x + w ]
                 x_train.append(roi)
@@ -44,6 +46,5 @@ for root, dirs, files in os.walk(image_dir):
 with open("labels.pickle", "wb") as f:
     pickle.dump(label_ids,f)
 
-
 recognizer.train(x_train, np.array(y_labels))
-recognizer.save("reainer.yml")
+recognizer.save("trainer.yml")

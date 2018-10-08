@@ -3,22 +3,17 @@
 # -*- coding: utf-8 -*-
 
 import RPi.GPIO as GPIO
-
 import time
-
+import firebase
+import os
+import glob
+import serial
+import subprocess
 import firebase_admin
-
+from firebase_admin import db
 from firebase_admin import credentials
 
-from firebase_admin import db
-
-import os
-
-import glob
-
-import serial
-
-import subprocess
+cred = credentials.Certificate("magicmirror-52b3f-firebase-adminsdk-oa09x-84946bee47.json")
 
 GPIO.setmode(GPIO.BOARD)
 
@@ -30,13 +25,21 @@ MOTION_IN = 8
 
 device_file = ""
 
-cred = credentials.Certificate('magicmirror-52b3f-firebase-adminsdk-oa09x-84946bee47.json')
+root = db.reference()
+print(root)
+url = 'https://magicmirror-52b3f.firebaseio.com'
 
 firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://magicmirror-52b3f.firebaseio.com'
+    'databaseURL' : url
 })
 
-ref = db.reference('sensors/')
+# Add a new user under /users.
+new_user = root.child('users').push({
+    'email' : 'mxolisi@gmail.com', 
+    'password' : 'Mx@lisi7'
+})
+
+fb = firebase.FirebaseApplication(url, None)
 
 GPIO.setup(LED_OUT, GPIO.OUT)
 
@@ -59,7 +62,7 @@ def read_temp_raw():
     f.close()
     return lines
 
-
+ 
 def read_temp():
     lines = read_temp_raw()
     while lines[0].strip()[-3:] != 'YES':
@@ -76,27 +79,24 @@ def write_temp_to_serial():
 
     return read_temp() 
 
-def alcohol_test():
-    ser = serial.Serial("/dev/ttyACM0",9600, timeout=7)
+def readSerial():
+    ser_communication = serial.Serial('/dev/ttyACM1',9600,timeout=1)
+    return ser_communication.readline()
     
-    base_dir = '/dev/ttyACM0'
-    line = ""
-
-    line = ser.readline()
-    #print(line)
-
-    return line
-
-
 def motion_detect():
+    result = fb.get('/temperature', None)
+    print(result)
+    '''
+    while True:
+        result = fb.patch('/temperature/',{'value': write_temp_to_serial()})
 
-	while True:
+        if GPIO.input(MOTION_IN) == True:
 
-		if GPIO.input(MOTION_IN) == True:
+            fb.patch('/temperature/',{'message': 'Hello, Welcome to Oliver'})
 
-			GPIO.output(LED_OUT, True)
+            GPIO.output(LED_OUT, True)
 
-			command = ('vcgencmd display_power 1')
+            command = ('vcgencmd display_power 1')
 
 			subprocess.call(command, shell=True)
 
@@ -106,22 +106,26 @@ def motion_detect():
 
 			subprocess.call(command, shell=True)
 
-			GPIO.output(LED_OUT, False)
+			fb.patch('/temperature/',{'message': 'Turning to sleep mode'})
 
-	return 0
+			GPIO.output(LED_OUT, False) 
+            
+    result = firebase.get('/users', None) '''
 
-def writeToFirebase(alcohol_value, temperature_value):
-    users_ref = ref.child('alcohol')
-    users_ref.set({
-    'value':  str(alcohol_value)
-    })
-    users_ref = ref.child('temperature')
-    users_ref.set({
-    'value' : str(temperature_value)
-    })
-    
+#reads to check if motion has been detected from the sensor
+
+#motion_detect()
+
+#reads temperature values from the temp* sensor
+
+#writes the read temperature value to the serial port 
+
+#which will be then read from NodeJs
+
+#temp = write_temp_to_serial()
+
 
 while True:
-    alc = alcohol_test()
-    temp = read_temp()
-    writeToFirebase(alc, temp )
+    print("Temperature : " + str(read_temp()));
+    print(readSerial());
+

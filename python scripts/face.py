@@ -2,8 +2,6 @@ import cv2
 import time
 import numpy as np
 from threading import Thread
- 
- 
 
 # Load prebuilt model for Frontal Face
 cascadePath = "haarcascade_frontalface_default.xml"

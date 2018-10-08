@@ -18,14 +18,14 @@ while True:
         cv2.rectangle(im,(x,y),(x+w,y+h),(225,0,0),2)
         Id, conf = recognizer.predict(gray[y:y+h,x:x+w])
         if(conf<50):
-            if(Id==4):
+            if(Id==7):
                 Id="Mxolisi"
             elif(Id==52):
                 Id="Sibusiso"
         else:
             Id="Unknown"
         cv2.cv.PutText(cv2.cv.fromarray(im),str(Id), (x,y+h),font, 255)
-    cv2.imshow('Recognize',im) 
+    cv2.imshow('im',im) 
     if cv2.waitKey(10) & 0xFF==ord('q'):
         break
 cam.release()
